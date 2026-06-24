@@ -14,6 +14,8 @@ app.use(cors());
 app.use(express.json());
 
 // Routes (we'll add these later)
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI) // tells mongoose to connect t a MongoDB database
