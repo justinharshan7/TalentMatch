@@ -17,6 +17,9 @@ app.use(express.json());
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 
+const companyRoutes = require('./routes/companyRoutes');
+app.use('/api/companies', companyRoutes);
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI) // tells mongoose to connect t a MongoDB database
   .then(() => console.log('MongoDB Connected')) // runs if the connection is successful
