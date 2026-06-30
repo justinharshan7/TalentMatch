@@ -13,12 +13,15 @@ const app = express(); // creates express application (like a car)
 app.use(cors());
 app.use(express.json());
 
-// Routes (we'll add these later)
+// Routes
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 
 const companyRoutes = require('./routes/companyRoutes');
 app.use('/api/companies', companyRoutes);
+
+const jobRoutes = require('./routes/jobRoutes');
+app.use('/api/jobs', jobRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI) // tells mongoose to connect t a MongoDB database
