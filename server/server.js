@@ -23,6 +23,9 @@ app.use('/api/companies', companyRoutes);
 const jobRoutes = require('./routes/jobRoutes');
 app.use('/api/jobs', jobRoutes);
 
+const candidateRoutes = require('./routes/candidateRoutes');
+app.use('/api/candidates', candidateRoutes);
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI) // tells mongoose to connect t a MongoDB database
   .then(() => console.log('MongoDB Connected')) // runs if the connection is successful
@@ -31,3 +34,7 @@ mongoose.connect(process.env.MONGO_URI) // tells mongoose to connect t a MongoDB
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+
+// every route in the project starts with /api/ - it's a standard convention
+// that tells everyone "this is a backend API endpoint, not a webpage".
