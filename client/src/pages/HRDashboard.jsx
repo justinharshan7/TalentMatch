@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getJobs, getCandidates } from '../services/api';
+import Navbar from '../components/Navbar';
 
 export default function HRDashboard() {
   const [jobs, setJobs] = useState([]);
@@ -27,20 +28,9 @@ export default function HRDashboard() {
       .finally(() => setLoading(false));
   }, [selectedJob]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/hr-login';
-  };
-
   return (
     <div className="min-h-screen bg-[#F7F8FA]">
-      <nav className="flex items-center justify-between px-8 py-5 border-b border-[#E5E8EE] bg-white">
-        <span className="text-xl font-bold text-[#2952E3]">TalentMatch</span>
-        <button onClick={handleLogout} className="text-sm font-medium text-[#5B6472]">
-          Logout
-        </button>
-      </nav>
+      <Navbar />
 
       <div className="max-w-5xl mx-auto px-6 py-10">
         <div className="flex items-center justify-between mb-6">

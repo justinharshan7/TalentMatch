@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getJobs } from '../services/api';
+import Navbar from '../components/Navbar';
 
 export default function Home() {
   const [jobs, setJobs] = useState([]);
@@ -13,12 +14,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#F7F8FA]">
       {/* Nav */}
-      <nav className="flex items-center justify-between px-8 py-5 border-b border-[#E5E8EE] bg-white">
-        <span className="text-xl font-bold text-[#2952E3]">TalentMatch</span>
-        <a href="/hr-login" className="text-sm font-medium text-[#14181F] hover:text-[#2952E3]">
-          HR Login
-        </a>
-      </nav>
+      <Navbar />
 
       {/* Hero */}
       <section className="text-center py-20 px-6">
