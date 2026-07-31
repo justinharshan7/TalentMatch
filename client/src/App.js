@@ -3,6 +3,8 @@ import Home from './pages/Home';
 import Apply from './pages/Apply';
 import HRLogin from './pages/HRLogin';
 import HRDashboard from './pages/HRDashboard';
+import CreateJob from './pages/CreateJob';
+import ManageJobs from './pages/ManageJobs';
 import './App.css';
 
 function App() {
@@ -13,6 +15,8 @@ function App() {
         <Route path="/apply/:jobId" element={<Apply />} />
         <Route path="/hr-login" element={<HRLogin />} />
         <Route path="/hr-dashboard" element={<HRDashboard />} />
+        <Route path="/create-job" element={<CreateJob />} />
+        <Route path="/manage-jobs" element={<ManageJobs />} />
       </Routes>
     </BrowserRouter>
   );

@@ -12,6 +12,7 @@ const app = express(); // creates express application (like a car)
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static('uploads'));
 
 // Routes
 const authRoutes = require('./routes/authRoutes');

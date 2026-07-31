@@ -15,16 +15,15 @@ export default function Home() {
     <div className="min-h-screen bg-[#F7F8FA] flex flex-col">
       <Navbar />
 
-      {/* Hero */}
       <section className="text-center py-24 px-6">
         <h1 className="text-4xl font-bold text-[#14181F] mb-4">
           Find Your Next Opportunity
         </h1>
         <p className="text-[#5B6472] max-w-xl mx-auto mb-8">
-          Explore open roles at TechNova and CloudWorks.
+          Explore open roles at Various Leading Companies.
         </p>
 
-        <div className="max-w-xl mx-auto flex bg-white border border-[#E5E8EE] rounded-full shadow-sm overflow-hidden focus-within:border-[#2952E3] transition-colors">
+        <div className="max-w-xl mx-auto flex bg-white border border-[#E5E8EE] rounded-2xl shadow-md hover:shadow-lg overflow-hidden focus-within:border-[#2952E3] transition-all">
           <input
             type="text"
             placeholder="Search job title or keyword..."
@@ -36,7 +35,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Job cards */}
       <section className="max-w-4xl mx-auto px-6 pb-24 flex-1 w-full">
         <h2 className="text-lg font-bold text-[#14181F] mb-6">Featured Positions</h2>
         <div className="grid md:grid-cols-2 gap-6">
@@ -58,7 +56,7 @@ export default function Home() {
               </div>
 
               
-               <a href={`/apply/${job._id}`}
+              <a href={`/apply/${job._id}`}
                 className="inline-block bg-[#2952E3] text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-[#1F3FB8] transition-colors"
               >
                 Apply Now
@@ -68,7 +66,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-[#E5E8EE] bg-white py-6 px-6 text-center text-sm text-[#5B6472]">
         © 2026 TalentMatch. All rights reserved.
       </footer>

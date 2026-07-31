@@ -14,8 +14,9 @@ const userSchema = new mongoose.Schema({ // schema is a blueprint that defines e
     type: String,
     required: true
   },
-  company: {
-    type: String,
+  companyId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Company',
     required: true
   }
 }, { timestamps: true });

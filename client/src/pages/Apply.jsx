@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getJob, applyJob } from '../services/api';
 import Navbar from '../components/Navbar';
+import BackLink from '../components/BackLink';
 
 export default function Apply() {
   const { jobId } = useParams();
@@ -66,7 +67,7 @@ export default function Apply() {
       <Navbar />
       <div className="flex-1 px-6 py-12">
         <div className="max-w-lg mx-auto bg-white border border-[#E5E8EE] rounded-xl p-8">
-          < a href="/" className="text-sm text-[#5B6472] hover:text-[#2952E3]">&larr; Back</a>
+          <BackLink to="/" label="Back" />
 
           <h1 className="text-2xl font-bold text-[#14181F] mt-4 mb-1">
             Apply {job ? `for ${job.title}` : ''}

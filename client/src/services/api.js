@@ -23,6 +23,9 @@ export const getCompanies = () => API.get('/companies');
 // Jobs
 export const getJobs = () => API.get('/jobs');
 export const getJob = (id) => API.get(`/jobs/${id}`);
+export const createJob = (data) => API.post('/jobs', data);
+export const getMyJobs = () => API.get('/jobs/my-jobs');
+export const deleteJob = (id) => API.delete(`/jobs/${id}`);
 
 // Candidates
 export const applyJob = (data) => API.post('/candidates/apply', data);

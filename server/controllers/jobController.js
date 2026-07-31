@@ -4,9 +4,10 @@ const Company = require('../models/Company');
 // Create job
 const createJob = async (req, res) => {
   try {
-    const { title, description, requirements, companyId } = req.body;
+    const { title, description, requirements } = req.body;
+    const companyId = req.user.companyId;
 
-    const company = await Company.findById(companyId); //Checks if the company exists before creating a job.
+    const company = await Company.findById(companyId);
     if (!company) {
       return res.status(404).json({ message: 'Company not found' });
     }
@@ -39,6 +40,16 @@ const getJobs = async (req, res) => {
   }
 };
 
+// Get jobs for logged-in HR's company only
+const getMyJobs = async (req, res) => {
+  try {
+    const jobs = await Job.find({ company: req.user.companyId }).populate('company', 'name description');
+    res.status(200).json(jobs);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 // Get single job
 const getJob = async (req, res) => {
   try {     //const job = await Job.findById(req.params.id) - Finds a single job by its ID.
@@ -53,4 +64,24 @@ const getJob = async (req, res) => {
   }
 };
 
-module.exports = { createJob, getJobs, getJob };
+// Delete job (only if it belongs to the logged-in HR's company)
+const deleteJob = async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    if (job.company.toString() !== req.user.companyId.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this job' });
+    }
+
+    await job.deleteOne();
+    res.status(200).json({ message: 'Job deleted' });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+module.exports = { createJob, getJobs, getJob, getMyJobs, deleteJob };
