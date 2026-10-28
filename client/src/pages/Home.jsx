@@ -4,12 +4,28 @@ import Navbar from '../components/Navbar';
 
 export default function Home() {
   const [jobs, setJobs] = useState([]);
+  const [query, setQuery] = useState('');
+  const [company, setCompany] = useState('All');
 
   useEffect(() => {
     getJobs()
       .then((res) => setJobs(res.data))
       .catch((err) => console.error(err));
   }, []);
+
+  const companies = ['All', ...new Set(jobs.map((j) => j.company?.name).filter(Boolean))];
+
+  const filteredJobs = jobs.filter((job) => {
+    const q = query.trim().toLowerCase();
+    const matchesQuery =
+      !q ||
+      job.title.toLowerCase().includes(q) ||
+      job.description.toLowerCase().includes(q) ||
+      job.company?.name.toLowerCase().includes(q) ||
+      job.requirements?.skills?.some((s) => s.toLowerCase().includes(q));
+    const matchesCompany = company === 'All' || job.company?.name === company;
+    return matchesQuery && matchesCompany;
+  });
 
   return (
     <div className="min-h-screen bg-[#F7F8FA] flex flex-col">
@@ -20,13 +36,15 @@ export default function Home() {
           Find Your Next Opportunity
         </h1>
         <p className="text-[#5B6472] max-w-xl mx-auto mb-8">
-          Explore open roles at Various Leading Companies.
+          Explore open roles at various leading companies.
         </p>
 
         <div className="max-w-xl mx-auto flex bg-white border border-[#E5E8EE] rounded-2xl shadow-md hover:shadow-lg overflow-hidden focus-within:border-[#2952E3] transition-all">
           <input
             type="text"
-            placeholder="Search job title or keyword..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by title, company or skill..."
             className="flex-1 px-5 py-3 text-sm outline-none"
           />
           <button className="bg-[#2952E3] text-white px-6 font-medium hover:bg-[#1F3FB8] transition-colors">
@@ -36,16 +54,40 @@ export default function Home() {
       </section>
 
       <section className="max-w-4xl mx-auto px-6 pb-24 flex-1 w-full">
-        <h2 className="text-lg font-bold text-[#14181F] mb-6">Featured Positions</h2>
+        <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+          <h2 className="text-lg font-bold text-[#14181F]">
+            Featured Positions ({filteredJobs.length})
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {companies.map((c) => (
+              <button
+                key={c}
+                onClick={() => setCompany(c)}
+                className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+                  company === c
+                    ? 'bg-[#2952E3] text-white border-[#2952E3]'
+                    : 'bg-white text-[#5B6472] border-[#E5E8EE] hover:border-[#2952E3]'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {filteredJobs.length === 0 && (
+          <p className="text-sm text-[#5B6472] text-center py-12">No jobs match your search.</p>
+        )}
+
         <div className="grid md:grid-cols-2 gap-6">
-          {jobs.map((job) => (
+          {filteredJobs.map((job) => (
             <div
               key={job._id}
               className="bg-white border border-[#E5E8EE] rounded-xl p-6 hover:shadow-md hover:-translate-y-0.5 transition-all"
             >
               <p className="text-sm text-[#5B6472] mb-1">{job.company?.name}</p>
               <h3 className="text-lg font-bold text-[#14181F] mb-3">{job.title}</h3>
-              <p className="text-sm text-[#5B6472] mb-4 line-clamp-3">{job.description}</p>
+              <p className="text-sm text-[#5B6472] mb-4 line-clamp-3 whitespace-pre-line">{job.description}</p>
 
               <div className="flex flex-wrap gap-2 mb-4">
                 {job.requirements?.skills?.slice(0, 3).map((skill) => (
@@ -55,8 +97,8 @@ export default function Home() {
                 ))}
               </div>
 
-              
-              <a href={`/apply/${job._id}`}
+              <a
+                href={`/apply/${job._id}`}
                 className="inline-block bg-[#2952E3] text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-[#1F3FB8] transition-colors"
               >
                 Apply Now

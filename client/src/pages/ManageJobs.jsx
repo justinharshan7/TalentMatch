@@ -47,12 +47,17 @@ export default function ManageJobs() {
                     <p className="text-sm font-medium text-[#14181F]">{job.title}</p>
                     <p className="text-xs text-[#5B6472]">{job.company?.name}</p>
                   </div>
-                  <button
-                    onClick={() => handleDelete(job._id)}
-                    className="text-sm text-red-600 hover:text-red-800 font-medium"
-                  >
-                    Delete
-                  </button>
+                                    <div className="flex items-center gap-4">
+                    <a href={`/edit-job/${job._id}`} className="text-sm text-[#2952E3] hover:underline font-medium">
+                      Edit
+                    </a>
+                    <button
+                      onClick={() => handleDelete(job._id)}
+                      className="text-sm text-red-600 hover:text-red-800 font-medium"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

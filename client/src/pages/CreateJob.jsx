@@ -17,6 +17,11 @@ export default function CreateJob() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (skills.length === 0) {
+      setError('Please add at least one skill');
+      setStatus('error');
+      return;
+    }
     setStatus('submitting');
     setError('');
 
