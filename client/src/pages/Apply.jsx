@@ -74,6 +74,13 @@ export default function Apply() {
           </h1>
           <p className="text-sm text-[#5B6472] mb-6">{job?.company?.name}</p>
 
+          {job && (
+            <section className="mb-6">
+              <h2 className="text-sm font-bold text-[#14181F] mb-2">Job Description</h2>
+              <p className="text-sm text-[#5B6472] whitespace-pre-line break-words">{job.description}</p>
+            </section>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-sm font-medium text-[#14181F] block mb-1">Full Name</label>

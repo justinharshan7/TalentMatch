@@ -6,6 +6,7 @@ import HRDashboard from './pages/HRDashboard';
 import CreateJob from './pages/CreateJob';
 import ManageJobs from './pages/ManageJobs';
 import EditJob from './pages/EditJob';
+import JobDetails from './pages/JobDetails';
 import './App.css';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/jobs/:id" element={<JobDetails />} />
         <Route path="/apply/:jobId" element={<Apply />} />
         <Route path="/hr-login" element={<HRLogin />} />
         <Route path="/hr-dashboard" element={<HRDashboard />} />

@@ -1,20 +1,53 @@
 const Job = require('../models/Job');
 const Company = require('../models/Company');
-const validateJobInput = ({ title, description, requirements }) => {
-  if (!title || !title.trim()) return 'Job title is required';
-  if (title.trim().length < 3) return 'Job title must be at least 3 characters';
-  if (!description || !description.trim()) return 'Description is required';
-  if (!requirements?.skills || requirements.skills.length === 0) return 'Add at least one skill';
-  return null;
+const validateJobInput = (input) => {
+  const { title, description, requirements } = input || {};
+  if (typeof title !== 'string' || title.trim().length < 3) {
+    return { error: 'Job title must be a string with at least 3 non-padding characters' };
+  }
+  if (typeof description !== 'string' || !description.trim()) {
+    return { error: 'Description must be a nonblank string' };
+  }
+  if (!requirements || typeof requirements !== 'object' || Array.isArray(requirements)) {
+    return { error: 'Requirements must be an object' };
+  }
+
+  const cleanedRequirements = {};
+  for (const category of ['skills', 'education', 'experience', 'certifications', 'softSkills']) {
+    const keywords = Object.hasOwn(requirements, category) ? requirements[category] : [];
+    if (!Array.isArray(keywords)) {
+      return { error: `${category} must be an array of strings` };
+    }
+
+    const seen = new Set();
+    cleanedRequirements[category] = [];
+    for (const keyword of keywords) {
+      if (typeof keyword !== 'string' || !keyword.trim()) {
+        return { error: `${category} keywords must be nonblank strings` };
+      }
+      const trimmed = keyword.trim();
+      const normalized = trimmed.toLowerCase();
+      if (!seen.has(normalized)) {
+        seen.add(normalized);
+        cleanedRequirements[category].push(trimmed);
+      }
+    }
+  }
+
+  if (cleanedRequirements.skills.length === 0) {
+    return { error: 'Add at least one skill' };
+  }
+  return {
+    data: { title: title.trim(), description: description.trim(), requirements: cleanedRequirements }
+  };
 };
 
 // Create job
 const createJob = async (req, res) => {
   try {
-    const { title, description, requirements } = req.body;
-        const validationError = validateJobInput({ title, description, requirements });
-    if (validationError) {
-      return res.status(400).json({ message: validationError });
+    const { error, data } = validateJobInput(req.body);
+    if (error) {
+      return res.status(400).json({ message: error });
     }
     const companyId = req.user.companyId;
 
@@ -24,9 +57,7 @@ const createJob = async (req, res) => {
     }
 
     const job = await Job.create({
-      title,
-      description,
-      requirements,
+      ...data,
       company: companyId
     });
 
@@ -107,14 +138,13 @@ const updateJob = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to edit this job' });
     }
 
-    const { title, description, requirements } = req.body;
-    const validationError = validateJobInput({ title, description, requirements });
-    if (validationError) {
-      return res.status(400).json({ message: validationError });
+    const { error, data } = validateJobInput(req.body);
+    if (error) {
+      return res.status(400).json({ message: error });
     }
-    job.title = title ?? job.title;
-    job.description = description ?? job.description;
-    job.requirements = requirements ?? job.requirements;
+    job.title = data.title;
+    job.description = data.description;
+    job.requirements = data.requirements;
 
     const updated = await job.save();
     res.status(200).json(updated);
