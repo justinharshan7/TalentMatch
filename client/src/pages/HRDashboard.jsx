@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { getMyJobs, getCandidates } from '../services/api';
+import { getMyJobs, getCandidates, getCandidateCV } from '../services/api';
 import Navbar from '../components/Navbar';
 
 export default function HRDashboard() {
@@ -10,6 +10,75 @@ export default function HRDashboard() {
   const [expandedId, setExpandedId] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [openingCV, setOpeningCV] = useState(null);
+  const [cvError, setCVError] = useState('');
+  const cvBusy = useRef(false);
+  const cvURLs = useRef(new Map());
+
+  useEffect(() => {
+    const urls = cvURLs.current;
+    return () => {
+      for (const [url, timer] of urls) {
+        clearTimeout(timer);
+        URL.revokeObjectURL(url);
+      }
+      urls.clear();
+    };
+  }, []);
+
+  const handleViewCV = async (event, candidateId) => {
+    event.stopPropagation();
+    if (cvBusy.current) return;
+    cvBusy.current = true;
+    setOpeningCV(candidateId);
+    setCVError('');
+    let preview;
+    try {
+      // Open synchronously so the browser can associate the tab with this click.
+      preview = window.open('about:blank', '_blank');
+      if (preview) preview.opener = null;
+      const response = await getCandidateCV(candidateId);
+      const type = response.headers['content-type']?.split(';')[0].toLowerCase();
+      const isPDF = type === 'application/pdf';
+      if (!isPDF && type !== 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        throw new Error('Unexpected CV file type');
+      }
+      const url = URL.createObjectURL(new Blob([response.data], { type }));
+      const timer = setTimeout(() => {
+        URL.revokeObjectURL(url);
+        cvURLs.current.delete(url);
+      }, 60000);
+      cvURLs.current.set(url, timer);
+      if (isPDF && preview && !preview.closed) {
+        preview.location.href = url;
+      } else {
+        if (preview) preview.close();
+        // DOCX needs an external reader. A blocked PDF popup also falls back to download.
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `candidate-${candidateId}.${isPDF ? 'pdf' : 'docx'}`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+    } catch (error) {
+      if (preview) preview.close();
+      let message = 'Unable to open this CV. Please try again.';
+      if (error.response?.status === 401) message = 'Your session has expired. Please sign in again.';
+      else if (error.response?.status === 403) message = 'You do not have permission to view this CV.';
+      else if (error.response?.status === 404) message = 'The candidate or CV file was not found.';
+      else if (error.response?.data instanceof Blob) {
+        try {
+          const data = JSON.parse(await error.response.data.text());
+          if (typeof data.message === 'string') message = data.message;
+        } catch { /* Keep the readable fallback when the response is not JSON. */ }
+      }
+      setCVError(message);
+    } finally {
+      cvBusy.current = false;
+      setOpeningCV(null);
+    }
+  };
 
   useEffect(() => {
     if (!localStorage.getItem('token')) {
@@ -105,6 +174,7 @@ export default function HRDashboard() {
           )}
         </div>
 
+        {cvError && <p role="alert" className="text-sm text-red-600 mb-4">{cvError}</p>}
         <div className="bg-white border border-[#E5E8EE] rounded-xl overflow-hidden">
           {loading && (
             <div className="px-5 py-16 text-center text-[#5B6472] text-sm">Loading candidates...</div>
@@ -142,14 +212,14 @@ export default function HRDashboard() {
                       <td className="px-5 py-4 text-[#5B6472]">{c.email}</td>
                       <td className="px-5 py-4">
                         
-                        <a href={`http://localhost:5000/${c.cvPath.replace(/\\/g, '/')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[#2952E3] text-xs font-medium hover:underline"
-                          onClick={(e) => e.stopPropagation()}
+                        <button
+                          type="button"
+                          disabled={openingCV !== null}
+                          className="text-[#2952E3] text-xs font-medium hover:underline disabled:opacity-50"
+                          onClick={(event) => handleViewCV(event, c._id)}
                         >
-                          View CV
-                        </a>
+                          {openingCV === c._id ? 'Opening...' : 'View CV'}
+                        </button>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">

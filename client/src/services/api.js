@@ -25,10 +25,14 @@ export const getJobs = () => API.get('/jobs');
 export const getJob = (id) => API.get(`/jobs/${id}`);
 export const createJob = (data) => API.post('/jobs', data);
 export const getMyJobs = () => API.get('/jobs/my-jobs');
-export const deleteJob = (id) => API.delete(`/jobs/${id}`);
+export const getJobDeletionInfo = (id) => API.get(`/jobs/${id}/deletion-info`);
+export const deleteJob = (id, expectedApplicationCount) => API.delete(`/jobs/${id}`, {
+  data: { expectedApplicationCount }
+});
 export const updateJob = (id, data) => API.put(`/jobs/${id}`, data);
 
 // Candidates
 export const applyJob = (data) => API.post('/candidates/apply', data);
 export const getCandidates = (jobId) => API.get(`/candidates/job/${jobId}`);
 export const getCandidate = (id) => API.get(`/candidates/${id}`);
+export const getCandidateCV = (id) => API.get(`/candidates/${id}/cv`, { responseType: 'blob' });

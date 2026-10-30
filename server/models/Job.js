@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const jobSchema = new mongoose.Schema({
+  isDeleting: { type: Boolean, default: false },
   title: {
     type: String,
     required: true

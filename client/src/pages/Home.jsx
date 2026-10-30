@@ -1,12 +1,68 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getJobs } from '../services/api';
 import Navbar from '../components/Navbar';
+
+const sortOptions = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'title', label: 'Title A–Z' },
+];
 
 export default function Home() {
   const [jobs, setJobs] = useState([]);
   const [query, setQuery] = useState('');
   const [company, setCompany] = useState('All');
   const [sortBy, setSortBy] = useState('newest');
+  const [sortOpen, setSortOpen] = useState(false);
+  const [activeSortIndex, setActiveSortIndex] = useState(0);
+  const sortRef = useRef(null);
+  const sortButtonRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (sortRef.current && !sortRef.current.contains(event.target)) setSortOpen(false);
+    };
+    document.addEventListener('pointerdown', handleOutsideClick);
+    return () => document.removeEventListener('pointerdown', handleOutsideClick);
+  }, []);
+
+  const openSort = () => {
+    setActiveSortIndex(sortOptions.findIndex((option) => option.value === sortBy));
+    setSortOpen(true);
+    sortButtonRef.current?.focus();
+  };
+
+  const closeSort = () => {
+    setSortOpen(false);
+    sortButtonRef.current?.focus();
+  };
+
+  const selectSort = (index) => {
+    setSortBy(sortOptions[index].value);
+    closeSort();
+  };
+
+  const handleSortKeyDown = (event) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (!sortOpen) openSort();
+      else setActiveSortIndex((index) => (index + (event.key === 'ArrowDown' ? 1 : -1) + sortOptions.length) % sortOptions.length);
+    } else if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault();
+      setActiveSortIndex(event.key === 'Home' ? 0 : sortOptions.length - 1);
+      setSortOpen(true);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      if (sortOpen) selectSort(activeSortIndex);
+      else openSort();
+    } else if (sortOpen && event.key === 'Escape') {
+      event.preventDefault();
+      closeSort();
+    } else if (sortOpen && event.key === 'Tab') {
+      // Focus stays on the trigger, so normal Tab/Shift+Tab leaves the control.
+      closeSort();
+    }
+  };
 
   useEffect(() => {
     getJobs()
@@ -87,17 +143,54 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-6">
-          <label htmlFor="job-sort" className="text-sm font-medium text-[#14181F]">Sort by</label>
-          <select
-            id="job-sort"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="w-full sm:w-auto bg-white border border-[#E5E8EE] rounded-lg px-3 py-2 text-sm text-[#5B6472] focus:border-[#2952E3]"
+          <span id="job-sort-label" className="text-sm font-medium text-[#14181F]">Sort by</span>
+          <div
+            ref={sortRef}
+            className="relative w-full sm:w-52"
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setSortOpen(false);
+            }}
           >
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-            <option value="title">Title A–Z</option>
-          </select>
+            <button
+              ref={sortButtonRef}
+              type="button"
+              role="combobox"
+              aria-labelledby="job-sort-label job-sort-value"
+              aria-haspopup="listbox"
+              aria-expanded={sortOpen}
+              aria-controls={sortOpen ? 'job-sort-options' : undefined}
+              aria-activedescendant={sortOpen ? `job-sort-${sortOptions[activeSortIndex].value}` : undefined}
+              onClick={() => sortOpen ? closeSort() : openSort()}
+              onKeyDown={handleSortKeyDown}
+              className="w-full flex items-center justify-between gap-3 border border-[#E5E8EE] rounded-lg px-4 py-2 text-sm bg-white text-left focus-visible:outline-[#2952E3]"
+            >
+              <span id="job-sort-value">{sortOptions.find((option) => option.value === sortBy).label}</span>
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B6472" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {sortOpen && (
+              <ul id="job-sort-options" role="listbox" aria-labelledby="job-sort-label" className="absolute mt-1 w-full bg-white border border-[#E5E8EE] rounded-lg shadow-lg z-10 overflow-hidden">
+                {sortOptions.map((option, index) => (
+                  <li
+                    key={option.value}
+                    id={`job-sort-${option.value}`}
+                    role="option"
+                    aria-selected={sortBy === option.value}
+                    tabIndex={-1}
+                    onClick={() => selectSort(index)}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onKeyDown={handleSortKeyDown}
+                    className={`px-4 py-2 text-sm cursor-pointer hover:bg-[#F7F8FA] ${
+                      sortBy === option.value ? 'bg-[#F7F8FA] font-medium text-[#2952E3]' : 'text-[#14181F]'
+                    } ${activeSortIndex === index ? 'ring-2 ring-inset ring-[#2952E3]' : ''}`}
+                  >
+                    {option.label}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
         {filteredJobs.length === 0 && (

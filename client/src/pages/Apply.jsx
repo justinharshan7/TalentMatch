@@ -43,18 +43,12 @@ export default function Apply() {
         <Navbar />
         <div className="flex-1 flex items-center justify-center px-6">
           <div className="bg-white border border-[#E5E8EE] rounded-xl p-8 max-w-md text-center">
-            <h2 className="text-xl font-bold text-[#14181F] mb-2">Application Submitted!</h2>
+            <h2 className="text-xl font-bold text-[#14181F] mb-2">Application submitted successfully.</h2>
             <p className="text-[#5B6472] mb-4">
-              Thanks, {result?.candidate?.name}. Your CV has been scored.
+              Your application has been received for {result?.jobTitle} at {result?.companyName}. The hiring team will contact you if you are selected for the next stage.
             </p>
-            <p className="text-3xl font-bold text-[#2952E3] mb-1">
-              {result?.candidate?.scores?.total} / 1000
-            </p>
-            <p className="text-sm text-[#5B6472]">
-              Status: <span className="font-medium">{result?.candidate?.status}</span>
-            </p>
-            < a href="/" className="inline-block mt-6 text-sm text-[#2952E3] font-medium">
-              Back to Home
+            <a href="/" className="inline-block mt-6 text-sm text-[#2952E3] font-medium">
+              Back to Jobs
             </a>
           </div>
         </div>
