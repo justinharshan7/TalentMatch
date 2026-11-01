@@ -36,3 +36,4 @@ export const applyJob = (data) => API.post('/candidates/apply', data);
 export const getCandidates = (jobId) => API.get(`/candidates/job/${jobId}`);
 export const getCandidate = (id) => API.get(`/candidates/${id}`);
 export const getCandidateCV = (id) => API.get(`/candidates/${id}/cv`, { responseType: 'blob' });
+export const deleteCandidate = (id) => API.delete(`/candidates/${id}`);

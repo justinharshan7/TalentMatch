@@ -104,9 +104,11 @@ export default function Apply() {
                 type="file"
                 required
                 accept=".pdf,.docx"
+                aria-describedby="cv-format-help"
                 onChange={(e) => setCv(e.target.files[0])}
                 className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#F7F8FA] file:text-[#5B6472] file:font-medium hover:file:bg-[#E5E8EE] file:cursor-pointer"
               />
+              <p id="cv-format-help" className="text-xs text-[#5B6472] mt-2">Accepted formats: PDF or Word (.docx).</p>
             </div>
 
             {status === 'error' && (

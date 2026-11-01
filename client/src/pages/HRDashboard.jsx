@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { getMyJobs, getCandidates, getCandidateCV } from '../services/api';
+import { getMyJobs, getCandidates, getCandidateCV, deleteCandidate } from '../services/api';
 import Navbar from '../components/Navbar';
 
 export default function HRDashboard() {
@@ -14,6 +14,48 @@ export default function HRDashboard() {
   const [cvError, setCVError] = useState('');
   const cvBusy = useRef(false);
   const cvURLs = useRef(new Map());
+  const [deletingId, setDeletingId] = useState(null);
+  const deletionBusy = useRef(false);
+  const [deletionFeedback, setDeletionFeedback] = useState(null);
+  const candidateRequest = useRef(0);
+  const currentJob = useRef(selectedJob);
+  currentJob.current = selectedJob;
+
+  const handleDelete = async (event, candidate) => {
+    event.stopPropagation();
+    if (deletionBusy.current || cvBusy.current) return;
+    deletionBusy.current = true;
+    const jobId = selectedJob;
+    try {
+      if (!window.confirm(`${candidate.name}\n\nDelete this application and its uploaded CV permanently? This cannot be undone.`)) return;
+      setDeletingId(candidate._id);
+      setDeletionFeedback(null);
+      try {
+        const { data } = await deleteCandidate(candidate._id);
+        if (currentJob.current !== jobId) return;
+        setCandidates((items) => items.filter((item) => item._id !== candidate._id));
+        setExpandedId((id) => id === candidate._id ? null : id);
+        setDeletionFeedback({ error: false, message: data.message });
+      } catch (error) {
+        if (currentJob.current !== jobId) return;
+        setDeletionFeedback({ error: true, message: error.response?.data?.message
+          || 'Application deletion could not be confirmed. Refresh to check its current status.' });
+      }
+      const request = ++candidateRequest.current;
+      try {
+        const { data } = await getCandidates(jobId);
+        if (currentJob.current === jobId && request === candidateRequest.current) setCandidates(data);
+      } catch {
+        if (currentJob.current === jobId && request === candidateRequest.current) {
+          setDeletionFeedback((feedback) => ({ error: true,
+            message: `${feedback?.message || ''} Unable to refresh the applicant list. Reload this page.` }));
+        }
+      }
+    } finally {
+      deletionBusy.current = false;
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     const urls = cvURLs.current;
@@ -29,6 +71,7 @@ export default function HRDashboard() {
   const handleViewCV = async (event, candidateId) => {
     event.stopPropagation();
     if (cvBusy.current) return;
+    if (deletionBusy.current) return;
     cvBusy.current = true;
     setOpeningCV(candidateId);
     setCVError('');
@@ -93,11 +136,15 @@ export default function HRDashboard() {
 
   useEffect(() => {
     if (!selectedJob) return;
+    let active = true;
+    const request = ++candidateRequest.current;
+    setDeletionFeedback(null);
     setLoading(true);
     getCandidates(selectedJob)
-      .then((res) => setCandidates(res.data))
+      .then((res) => { if (active && request === candidateRequest.current) setCandidates(res.data); })
       .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+      .finally(() => { if (active && request === candidateRequest.current) setLoading(false); });
+    return () => { active = false; };
   }, [selectedJob]);
 
   useEffect(() => {
@@ -140,6 +187,7 @@ export default function HRDashboard() {
           <label className="text-sm font-medium text-[#14181F] block mb-1">Select Job</label>
           <button
             type="button"
+            disabled={deletingId !== null}
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="w-full flex items-center justify-between border border-[#E5E8EE] rounded-lg px-4 py-2 text-sm bg-white text-left"
           >
@@ -159,6 +207,7 @@ export default function HRDashboard() {
                 <button
                   key={job._id}
                   type="button"
+                  disabled={deletingId !== null}
                   onClick={() => {
                     setSelectedJob(job._id);
                     setDropdownOpen(false);
@@ -175,6 +224,7 @@ export default function HRDashboard() {
         </div>
 
         {cvError && <p role="alert" className="text-sm text-red-600 mb-4">{cvError}</p>}
+        {deletionFeedback && <p role={deletionFeedback.error ? 'alert' : 'status'} className={`text-sm mb-4 ${deletionFeedback.error ? 'text-red-600' : 'text-green-700'}`}>{deletionFeedback.message}</p>}
         <div className="bg-white border border-[#E5E8EE] rounded-xl overflow-hidden">
           {loading && (
             <div className="px-5 py-16 text-center text-[#5B6472] text-sm">Loading candidates...</div>
@@ -195,6 +245,7 @@ export default function HRDashboard() {
                 <th className="px-5 py-3">CV</th>
                 <th className="px-5 py-3 w-40">Match Score</th>
                 <th className="px-5 py-3">Status</th>
+                <th className="px-5 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -214,7 +265,7 @@ export default function HRDashboard() {
                         
                         <button
                           type="button"
-                          disabled={openingCV !== null}
+                          disabled={openingCV !== null || deletingId !== null}
                           className="text-[#2952E3] text-xs font-medium hover:underline disabled:opacity-50"
                           onClick={(event) => handleViewCV(event, c._id)}
                         >
@@ -245,10 +296,17 @@ export default function HRDashboard() {
                           {c.status}
                         </span>
                       </td>
+                      <td className="px-5 py-4">
+                        <button type="button" disabled={deletingId !== null || openingCV !== null}
+                          onClick={(event) => handleDelete(event, c)}
+                          className="text-red-600 text-xs font-medium hover:underline disabled:opacity-50">
+                          {deletingId === c._id ? 'Deleting...' : 'Delete Application'}
+                        </button>
+                      </td>
                     </tr>
                     {expandedId === c._id && (
                       <tr className="bg-[#F7F8FA] border-t border-[#E5E8EE]">
-                        <td colSpan="5" className="px-5 py-4">
+                        <td colSpan="6" className="px-5 py-4">
                           <div className="grid grid-cols-5 gap-4 text-xs">
                             <div>
                               <p className="text-[#5B6472] mb-1">Skills</p>

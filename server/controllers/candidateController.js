@@ -2,7 +2,7 @@ const Candidate = require('../models/Candidate');
 const Job = require('../models/Job');
 const path = require('node:path');
 const { withJobLock } = require('../utils/jobLifecycle');
-const { removeCV, getCVPathForRead } = require('../utils/cvStorage');
+const { removeCV, getCVPathForRead, cvPathKey } = require('../utils/cvStorage');
 const { isObjectIdOrHexString } = require('mongoose');
 const cvProcessor = require('../utils/cvProcessor');
 
@@ -159,4 +159,50 @@ const getCandidateCV = async (req, res) => {
   }
 };
 
-module.exports = { submitApplication, getCandidates, getCandidate, getCandidateCV };
+const deleteCandidate = async (req, res) => {
+  let cvCleanupCompleted = false;
+  try {
+    const initial = await getOwnedCandidate(req, res);
+    if (!initial) return;
+    if (!isObjectIdOrHexString(initial.job)) {
+      return res.status(409).json({ message: 'Application has no valid job reference. Nothing was deleted.' });
+    }
+    return await withJobLock(initial.job, async () => {
+      const candidate = await getOwnedCandidate(req, res);
+      if (!candidate) return;
+      if (candidate.job?.toString() !== initial.job.toString()) {
+        return res.status(409).json({ message: 'Application changed. Refresh before deleting.' });
+      }
+      const job = await Job.findById(candidate.job);
+      if (!job || job.company?.toString() !== req.user.companyId.toString()) {
+        return res.status(409).json({ message: 'Application job ownership could not be verified. Nothing was deleted.' });
+      }
+      if (job.isDeleting) {
+        return res.status(409).json({ message: 'Job deletion is incomplete or in progress. Use Retry Deletion on the job.' });
+      }
+      const key = cvPathKey(candidate.cvPath);
+      const others = await Candidate.find({ _id: { $ne: candidate._id } }).select('cvPath');
+      if (others.some((other) => cvPathKey(other.cvPath) === key)) {
+        return res.status(409).json({ message: 'This CV is shared with another application. Nothing was deleted.' });
+      }
+      const removed = await removeCV(candidate.cvPath);
+      cvCleanupCompleted = true;
+      const result = await Candidate.deleteOne({
+        _id: candidate._id, company: req.user.companyId, job: candidate.job, cvPath: candidate.cvPath
+      });
+      if (result.deletedCount !== 1) throw new Error('Application deletion was not confirmed');
+      return res.status(200).json({
+        message: removed ? 'Application and uploaded CV permanently deleted.' : 'Application permanently deleted. Its CV was already missing.'
+      });
+    });
+  } catch {
+    return res.status(500).json({
+      cvCleanupCompleted,
+      message: cvCleanupCompleted
+        ? 'CV cleanup completed, but application deletion could not be confirmed. Refresh the list; retry if the application remains.'
+        : 'Application deletion could not be completed. The application was not removed; CV cleanup may be incomplete. Refresh before retrying.'
+    });
+  }
+};
+
+module.exports = { submitApplication, getCandidates, getCandidate, getCandidateCV, deleteCandidate };

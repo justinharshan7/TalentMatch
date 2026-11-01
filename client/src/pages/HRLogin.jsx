@@ -62,6 +62,13 @@ export default function HRLogin() {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+        <div className="mt-6 border-t border-[#E5E8EE] pt-5 text-center">
+          <p className="text-sm text-[#5B6472] mb-2">Looking for a job?</p>
+          <a href="/" className="text-sm font-medium text-[#2952E3] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2952E3]">
+            Continue as Guest
+          </a>
+          <p className="text-xs text-[#5B6472] mt-2">Browse vacancies and submit your CV.</p>
+        </div>
       </div>
     </div>
   );

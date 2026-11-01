@@ -1,9 +1,9 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import HRDashboard from './HRDashboard';
-import { getMyJobs, getCandidates, getCandidateCV } from '../services/api';
+import { getMyJobs, getCandidates, getCandidateCV, deleteCandidate } from '../services/api';
 
 jest.mock('../services/api', () => ({
-  getMyJobs: jest.fn(), getCandidates: jest.fn(), getCandidateCV: jest.fn()
+  getMyJobs: jest.fn(), getCandidates: jest.fn(), getCandidateCV: jest.fn(), deleteCandidate: jest.fn()
 }));
 jest.mock('../components/Navbar', () => () => <nav>TalentMatch</nav>);
 
@@ -165,4 +165,91 @@ test('unmounting releases temporary URLs immediately', async () => {
   await waitFor(() => expect(button).toBeEnabled());
   cleanup();
   expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:synthetic-fixture');
+});
+
+test('deletion names the applicant, refreshes list/count and preserves the remaining row', async () => {
+  const other = { ...candidate, _id: 'other', name: 'Other Fixture' };
+  getCandidates.mockResolvedValueOnce({ data: [candidate, other] }).mockResolvedValue({ data: [other] });
+  jest.spyOn(window, 'confirm').mockReturnValue(true);
+  deleteCandidate.mockResolvedValue({ data: { message: 'Application and uploaded CV permanently deleted.' } });
+  render(<HRDashboard />);
+  await screen.findByText(candidate.name);
+  fireEvent.click(within(screen.getByText(candidate.name).closest('tr')).getByRole('button', { name: 'Delete Application' }));
+  await screen.findByText('1 applicant');
+  expect(window.confirm).toHaveBeenCalledWith(`${candidate.name}\n\nDelete this application and its uploaded CV permanently? This cannot be undone.`);
+  expect(deleteCandidate).toHaveBeenCalledWith(candidate._id);
+  expect(getCandidates).toHaveBeenCalledTimes(2);
+  expect(screen.queryByText(candidate.name)).not.toBeInTheDocument();
+  expect(screen.getByText('Other Fixture')).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('permanently deleted');
+  expect(screen.queryByText('Education')).not.toBeInTheDocument();
+});
+
+test('cancelling deletion sends no delete or refresh request', async () => {
+  jest.spyOn(window, 'confirm').mockReturnValue(false);
+  render(<HRDashboard />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete Application' }));
+  expect(deleteCandidate).not.toHaveBeenCalled();
+  expect(getCandidates).toHaveBeenCalledTimes(1);
+  expect(screen.getByText(candidate.name)).toBeInTheDocument();
+});
+
+test('deletion blocks repeated clicks, CV opening and job switching while pending', async () => {
+  jest.spyOn(window, 'confirm').mockReturnValue(true);
+  let complete;
+  deleteCandidate.mockReturnValue(new Promise(resolve => { complete = resolve; }));
+  render(<HRDashboard />);
+  const button = await screen.findByRole('button', { name: 'Delete Application' });
+  fireEvent.click(button);
+  expect(button).toBeDisabled();
+  fireEvent.click(button);
+  expect(deleteCandidate).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('button', { name: 'View CV' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Fixture Job - Fixture Company' })).toBeDisabled();
+  getCandidates.mockResolvedValue({ data: [] });
+  await act(async () => complete({ data: { message: 'Application deleted.' } }));
+  expect(await screen.findByText('0 applicants')).toBeInTheDocument();
+});
+
+for (const [label, error, message] of [
+  ['partial cleanup', { response: { data: { message: 'CV cleanup completed, but application deletion could not be confirmed.' } } }, 'CV cleanup completed'],
+  ['network error', new Error('Synthetic network failure'), 'Application deletion could not be confirmed']
+]) test(`${label} is reported honestly and refreshes the current records`, async () => {
+  jest.spyOn(window, 'confirm').mockReturnValue(true);
+  deleteCandidate.mockRejectedValue(error);
+  render(<HRDashboard />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete Application' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(message);
+  await waitFor(() => expect(getCandidates).toHaveBeenCalledTimes(2));
+  expect(screen.getByText(candidate.name)).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Application' })).toBeEnabled());
+});
+
+test('successful deletion with refresh failure reports both outcomes', async () => {
+  jest.spyOn(window, 'confirm').mockReturnValue(true);
+  deleteCandidate.mockResolvedValue({ data: { message: 'Application and uploaded CV permanently deleted.' } });
+  getCandidates.mockResolvedValueOnce({ data: [candidate] }).mockRejectedValue(new Error('Synthetic refresh failure'));
+  render(<HRDashboard />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete Application' }));
+  const alert = await screen.findByRole('alert');
+  expect(alert).toHaveTextContent('permanently deleted');
+  expect(alert).toHaveTextContent('Unable to refresh');
+  expect(screen.getByText('0 applicants')).toBeInTheDocument();
+});
+
+test('late candidate response from a previous job cannot overwrite the selected job', async () => {
+  getMyJobs.mockResolvedValue({ data: [
+    { _id: 'synthetic-job', title: 'Fixture Job', company: { name: 'Fixture Company' } },
+    { _id: 'second-job', title: 'Second Job', company: { name: 'Fixture Company' } }
+  ] });
+  let complete;
+  getCandidates.mockReturnValueOnce(new Promise(resolve => { complete = resolve; }))
+    .mockResolvedValue({ data: [{ ...candidate, _id: 'second', name: 'Second Fixture' }] });
+  render(<HRDashboard />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Fixture Job - Fixture Company' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Second Job - Fixture Company' }));
+  await screen.findByText('Second Fixture');
+  await act(async () => complete({ data: [candidate] }));
+  expect(screen.queryByText(candidate.name)).not.toBeInTheDocument();
+  expect(screen.getByText('Second Fixture')).toBeInTheDocument();
 });

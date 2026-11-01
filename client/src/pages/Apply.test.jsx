@@ -25,6 +25,16 @@ async function submit() {
   return cv;
 }
 
+test('CV input describes accepted formats and retains the PDF/DOCX picker filter', async () => {
+  const { container } = render(<Apply />);
+  await screen.findByRole('heading', { name: 'Apply for Initial Job Title' });
+  const input = container.querySelector('input[type="file"]');
+  expect(input).toHaveAttribute('accept', '.pdf,.docx');
+  const help = screen.getByText('Accepted formats: PDF or Word (.docx).');
+  expect(input).toHaveAttribute('aria-describedby', help.id);
+  expect(input).toHaveAccessibleDescription('Accepted formats: PDF or Word (.docx).');
+});
+
 test.each([
   ['Senior Engineer', 'Example Company'],
   ['Designer', 'Another Company']
