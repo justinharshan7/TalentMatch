@@ -1,6 +1,6 @@
 # TalentMatch
 
-**Registered project title:** Intelligent CV Screening and Candidate Shortlisting Platform
+**Project title:** Intelligent CV Screening and Candidate Shortlisting Platform
 
 **Application name:** TalentMatch
 
