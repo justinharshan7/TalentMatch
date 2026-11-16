@@ -62,12 +62,6 @@ export default function HRLogin() {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-        <p className="mt-5 text-center text-sm text-[#5B6472]">
-          New to TalentMatch?{' '}
-          <a href="/hr-register" className="font-medium text-[#2952E3] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2952E3]">
-            Create an HR account
-          </a>
-        </p>
         <div className="mt-6 border-t border-[#E5E8EE] pt-5 text-center">
           <p className="text-sm text-[#5B6472] mb-2">Looking for a job?</p>
           <a href="/" className="text-sm font-medium text-[#2952E3] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2952E3]">

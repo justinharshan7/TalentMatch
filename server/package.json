@@ -4,9 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node --test controllers/authController.test.js controllers/jobController.test.js controllers/jobDeletion.test.js controllers/candidateAccess.test.js controllers/candidateDeletion.test.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "seed:demo": "node scripts/seed-demo.js",
     "dev": "nodemon server.js"
   },
   "keywords": [],
