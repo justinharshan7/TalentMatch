@@ -1,3 +1,5 @@
 node_modules/
 .env
 uploads/
+.env.*
+client/build/

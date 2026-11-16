@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { Fragment, useEffect, useState, useRef } from 'react';
 import { getMyJobs, getCandidates, getCandidateCV, deleteCandidate } from '../services/api';
 import Navbar from '../components/Navbar';
 
@@ -253,7 +253,7 @@ export default function HRDashboard() {
                 .slice()
                 .sort((a, b) => b.scores.total - a.scores.total)
                 .map((c) => (
-                  <>
+                    <Fragment key={c._id}>
                     <tr
                       key={c._id}
                       onClick={() => setExpandedId(expandedId === c._id ? null : c._id)}
@@ -332,7 +332,7 @@ export default function HRDashboard() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
             </tbody>
             </table>

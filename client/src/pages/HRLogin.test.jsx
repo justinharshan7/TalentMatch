@@ -20,12 +20,16 @@ test('guest link follows the login form, targets public Home and is keyboard acc
   const explanation = screen.getByText('Browse vacancies and submit your CV.');
   expect(explanation).toHaveClass('text-xs');
   expect(link.nextElementSibling).toBe(explanation);
-  expect(screen.getAllByRole('link')).toHaveLength(1);
+  const registrationLink = screen.getByRole('link', { name: 'Create an HR account' });
+  expect(registrationLink).toHaveAttribute('href', '/hr-register');
+  expect(screen.getAllByRole('link')).toHaveLength(2);
   expect(container.querySelector('form').contains(link)).toBe(false);
   userEvent.tab();
   userEvent.tab();
   userEvent.tab();
   expect(screen.getByRole('button', { name: 'Login' })).toHaveFocus();
+  userEvent.tab();
+  expect(registrationLink).toHaveFocus();
   userEvent.tab();
   expect(link).toHaveFocus();
   expect(link).toHaveClass('focus-visible:outline-2');
